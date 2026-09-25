@@ -12,6 +12,7 @@ Nothing is compiled here. The image packages the static musl binaries
 ```bash
 docker run -d --name rusthinq --restart unless-stopped --network host \
   -v "$PWD/data:/data" \
+  -v "$PWD/scripts:/scripts" \
   -e RUSTHINQ_HOSTNAME=rusthinq.local \
   -e RUSTHINQ_MQTT_URL=mqtt://localhost:1883 \
   3735943886/rusthinq
@@ -26,6 +27,11 @@ are). The container runs as root because those ports are below 1024.
 `/data` holds everything that has to survive a restart. **Back it up.** In particular
 `ca.key` / `ca.cert` is the certificate authority appliances pin when they are set up;
 lose it and every appliance has to be set up again.
+
+`/scripts` holds the Rhai device scripts (`<modelId>.rhai`). Bind-mount a host directory
+there and edit them in place: rusthinq watches the directory and reloads a script when it
+changes, no restart needed. It is kept out of `/data` so the scripts can be shared or put
+under version control without the CA key next to them.
 
 Initial appliance setup (SoftAP adoption, or DNS redirection for appliances already paired
 to LG) is described in the
@@ -58,7 +64,7 @@ Either environment variables, or your own `config.toml`:
 | `RUSTHINQ_RAW` | `rx,tx,clip_tx,inject,inject_clip,emit` | Raw bus streams |
 | `RUSTHINQ_BRIDGE` | off | Forward to the real LG cloud (state in `/data/state`) |
 | `RUSTHINQ_BRIDGE_DNS` | empty | DNS / DoH servers for the bridge, comma separated |
-| `RUSTHINQ_SCRIPTING` | on | Rhai device scripts from `RUSTHINQ_SCRIPTS_DIR` (default `/data/scripts`) |
+| `RUSTHINQ_SCRIPTING` | on | Rhai device scripts from `RUSTHINQ_SCRIPTS_DIR` (default `/scripts`) |
 | `RUSTHINQ_IL_PREFIX` | empty | IL descriptor prefix for scripts |
 | `RUSTHINQ_GUI` | off | Dashboard on `RUSTHINQ_GUI_PORT` (default 44401) |
 | `RUSTHINQ_GUI_USER`, `RUSTHINQ_GUI_PASSWORD` | empty | Dashboard login. Set them: it can control the bridge |

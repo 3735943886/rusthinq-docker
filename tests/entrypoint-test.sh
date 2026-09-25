@@ -37,7 +37,7 @@ run defaults
 expect defaults 'hostname = "rusthinq.local"'
 expect defaults 'mqtt_url = "mqtt://localhost:1883"'
 expect defaults 'raw_prefix = "rusthinq-raw"'
-expect defaults 'rhai_dir = "./scripts"'
+expect defaults 'rhai_dir = "/scripts"'
 reject defaults '[bridge]'
 reject defaults '[gui]'
 
