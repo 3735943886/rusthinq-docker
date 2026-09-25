@@ -35,6 +35,8 @@ reject() { # reject <name> <fixed string>
 
 run defaults
 expect defaults 'hostname = "rusthinq.local"'
+expect defaults 'https_port = 443'
+expect defaults 'mqtts_port = 8883'
 expect defaults 'mqtt_url = "mqtt://localhost:1883"'
 expect defaults 'raw_prefix = "rusthinq-raw"'
 expect defaults 'rhai_dir = "./scripts"'
@@ -43,7 +45,7 @@ reject defaults '[gui]'
 
 run everything RUSTHINQ_BRIDGE=true RUSTHINQ_BRIDGE_DNS="https://1.1.1.1/dns-query, 8.8.8.8" \
     RUSTHINQ_GUI=True RUSTHINQ_GUI_USER=admin RUSTHINQ_GUI_PASSWORD='p"a\ss' \
-    RUSTHINQ_MQTT_PASSWORD='se"cret\' RUSTHINQ_LOG="status, incoming"
+    RUSTHINQ_MQTT_PASSWORD="se\"cret\\" RUSTHINQ_LOG="status, incoming"
 expect everything '[bridge]'
 expect everything 'dns = ["https://1.1.1.1/dns-query", "8.8.8.8"]'
 expect everything 'gui_pass = "p\"a\\ss"'
