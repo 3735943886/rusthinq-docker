@@ -23,7 +23,7 @@ for pair in amd64:amd64 aarch64:arm64 armv7:armv7; do
     dest="${pair##*:}"
     archive="$WORK/rusthinq-$TAG-linux-$asset.tar.gz"
     [ -f "$archive" ] || { echo "missing $archive" >&2; exit 1; }
-    rm -rf "$ROOT/bin/$dest"
+    rm -rf "${ROOT:?}/bin/$dest"
     mkdir -p "$ROOT/bin/$dest"
     tar -xzf "$archive" -C "$ROOT/bin/$dest" --strip-components=1
     chmod +x "$ROOT/bin/$dest"/rusthinq-*

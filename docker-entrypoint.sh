@@ -26,7 +26,7 @@ set -f # no globbing while splitting the comma-separated lists below
 DATA_DIR="${RUSTHINQ_DATA_DIR:-/data}"
 
 bool() {
-    case "$(printf '%s' "${1:-}" | tr 'A-Z' 'a-z')" in
+    case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
         1 | true | yes | on) return 0 ;;
         *) return 1 ;;
     esac
@@ -69,6 +69,8 @@ generate_config() {
     fi
     echo 'ca_key_file = "ca.key"'
     echo 'ca_cert_file = "ca.cert"'
+    echo 'https_port = 443'
+    echo 'mqtts_port = 8883'
     printf 'log = %s\n' "$(toml_list "${RUSTHINQ_LOG:-status,HTTPS,bridge}")"
 
     echo
