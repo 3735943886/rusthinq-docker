@@ -14,6 +14,10 @@
 # pin it, losing it means re-provisioning every appliance), the generated
 # config, and, when enabled, the bridge's LG credentials in ./state.
 #
+# Rhai device scripts are kept apart from that, in /scripts, so a host directory
+# can be bind-mounted there and edited in place (the script watcher reloads them
+# without a restart) without exposing the CA key next to them.
+#
 # Any command line arguments replace the default start, e.g.
 #   docker run ... rusthinq rusthinq-setup 192.168.120.254 'SSID' 'password'
 set -eu
@@ -142,7 +146,7 @@ fi
 
 load_ha_options
 
-SCRIPTS_DIR="${RUSTHINQ_SCRIPTS_DIR:-./scripts}"
+SCRIPTS_DIR="${RUSTHINQ_SCRIPTS_DIR:-/scripts}"
 
 mkdir -p "$DATA_DIR"
 cd "$DATA_DIR"

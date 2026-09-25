@@ -39,7 +39,7 @@ expect defaults 'https_port = 443'
 expect defaults 'mqtts_port = 8883'
 expect defaults 'mqtt_url = "mqtt://localhost:1883"'
 expect defaults 'raw_prefix = "rusthinq-raw"'
-expect defaults 'rhai_dir = "./scripts"'
+expect defaults 'rhai_dir = "/scripts"'
 reject defaults '[bridge]'
 reject defaults '[gui]'
 
