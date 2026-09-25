@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell scripts
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck jq
+          shellcheck docker-entrypoint.sh scripts/*.sh tests/*.sh
+      - name: Entrypoint tests
+        run: tests/entrypoint-test.sh
+      - name: Add-on metadata parses
+        run: |
+          python3 - <<'PY'
+          import yaml
+          for f in ("repository.yaml", "rusthinq/config.yaml", "docker-compose.yml"):
+              yaml.safe_load(open(f))
+          cfg = yaml.safe_load(open("rusthinq/config.yaml"))
+          assert set(cfg["options"]) <= set(cfg["schema"]), "option without a schema entry"
+          PY

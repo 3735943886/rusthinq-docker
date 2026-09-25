@@ -1,0 +1,49 @@
+name: "Rusthinq"
+version: "0.0.0"
+slug: rusthinq
+description: "LG ThinQ local cloud emulator: local MQTT control of LG appliances, optional bridge to the LG cloud"
+url: "https://github.com/3735943886/rusthinq-docker"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+image: "3735943886/rusthinq"
+# Appliances reach rusthinq on fixed ports (443, 8883, 46030, 47878) that they
+# resolve through DNS or a router redirect, so it has to sit on the host network.
+host_network: true
+init: false
+startup: services
+boot: auto
+# The add-on's own config directory (/config inside the container): Rhai device
+# scripts go in its scripts/ folder.
+map:
+  - addon_config:rw
+options:
+  hostname: "rusthinq.local"
+  advertise_requested_host: false
+  # Mosquitto's add-on publishes 1883 on the host, and this add-on shares the host
+  # network, so localhost reaches it.
+  mqtt_url: "mqtt://localhost:1883"
+  prefix: "rusthinq"
+  bridge: false
+  scripting: true
+  gui: false
+  log: "status,HTTPS,bridge"
+schema:
+  hostname: "str"
+  advertise_requested_host: "bool"
+  mqtt_url: "str"
+  mqtt_user: "str?"
+  mqtt_password: "password?"
+  prefix: "str"
+  raw_prefix: "str?"
+  raw: "str?"
+  bridge: "bool"
+  bridge_dns: "str?"
+  scripting: "bool"
+  il_prefix: "str?"
+  gui: "bool"
+  gui_port: "port?"
+  gui_user: "str?"
+  gui_password: "password?"
+  log: "str"

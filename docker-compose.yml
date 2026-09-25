@@ -1,0 +1,22 @@
+# Appliances find rusthinq through DNS (or a router redirect) on fixed ports, so
+# host networking is the straightforward way to run it.
+services:
+  rusthinq:
+    image: 3735943886/rusthinq:latest
+    container_name: rusthinq
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./data:/data
+    environment:
+      TZ: Asia/Seoul
+      # Used only while ./data/config.toml does not exist; drop a config.toml in
+      # there instead to take over completely (see README).
+      RUSTHINQ_HOSTNAME: rusthinq.local # a name the appliances resolve to this host
+      RUSTHINQ_MQTT_URL: mqtt://localhost:1883
+      # RUSTHINQ_MQTT_USER: ""
+      # RUSTHINQ_MQTT_PASSWORD: ""
+      # RUSTHINQ_BRIDGE: "true"   # forward to the real LG cloud
+      # RUSTHINQ_GUI: "true"      # web dashboard on :44401
+      # RUSTHINQ_GUI_USER: admin
+      # RUSTHINQ_GUI_PASSWORD: change-me
