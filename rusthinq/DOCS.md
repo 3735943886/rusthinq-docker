@@ -14,6 +14,12 @@ knows nothing about Home Assistant.
   [rethink installation guide](https://github.com/anszom/rethink/wiki/Installing-rethink‐cloud).
   `hostname` below is the name they will be told to use, so it has to resolve to this
   host on your network. It can't be an IP address.
+- The add-on cannot put Wi-Fi credentials into a new appliance (SoftAP setup with
+  `rusthinq-setup`): that needs a machine connected to the appliance's own Wi-Fi network,
+  which the Home Assistant host normally is not. Do that step from a PC, using the
+  release binary or `docker run --rm --network host 3735943886/rusthinq rusthinq-setup ...`,
+  and give the appliance the same `hostname` as below. Appliances already paired to LG and
+  redirected to rusthinq need no setup step.
 - Rusthinq creates its own certificate authority on first start and keeps it in the
   add-on's data. Appliances pin it: once they are set up, **back up this add-on**
   before removing it, or you will have to set them up again.

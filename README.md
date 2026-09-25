@@ -42,6 +42,10 @@ The setup tool is in the image:
 docker run --rm --network host 3735943886/rusthinq rusthinq-setup 192.168.120.254 'SSID' 'password'
 ```
 
+This has to run on a machine that is connected to the appliance's own SoftAP Wi-Fi
+(`192.168.120.254`), so use a laptop or PC. It is not something the Home Assistant add-on
+can do (see below).
+
 ### Configuration
 
 Either environment variables, or your own `config.toml`:
@@ -83,6 +87,13 @@ turns its options into the same `RUSTHINQ_*` settings as above. Rhai scripts go 
 add-on's config folder under `scripts/`. It needs an MQTT broker (the Mosquitto add-on) and
 something that maps rusthinq's topics to entities; rusthinq itself is not Home Assistant
 specific.
+
+**No SoftAP provisioning from the add-on.** Putting Wi-Fi credentials into an appliance with
+`rusthinq-setup` needs a machine joined to the appliance's SoftAP network, and the add-on
+has neither that connection nor a way to run the tool with arguments. Do that step from a PC
+(release binary, or the `docker run` above), pointing the appliance at the name in the
+add-on's `hostname` option. Appliances that are already paired to LG, and redirected to
+rusthinq by DNS or on the router, need no setup step, and the add-on handles them as usual.
 
 ## Releasing
 
