@@ -13,7 +13,7 @@ Nothing is compiled here. The image packages the static musl binaries
 docker run -d --name rusthinq --restart unless-stopped --network host \
   -v "$PWD/data:/data" \
   -v "$PWD/scripts:/scripts" \
-  -e RUSTHINQ_HOSTNAME=rusthinq.local \
+  -e RUSTHINQ_HOSTNAME=rusthinq.lan \
   -e RUSTHINQ_MQTT_URL=mqtt://localhost:1883 \
   3735943886/rusthinq
 ```
@@ -59,7 +59,7 @@ Either environment variables, or your own `config.toml`:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `RUSTHINQ_HOSTNAME` | `rusthinq.local` | Name appliances are told to connect to (not an IP address) |
+| `RUSTHINQ_HOSTNAME` | `rusthinq.lan` | Name appliances are told to connect to. Not an IP address, and not a `.local` name: appliances don't do mDNS |
 | `RUSTHINQ_ADVERTISE_REQUESTED_HOST` | off | Answer with the name the appliance asked for |
 | `RUSTHINQ_MQTT_URL` | `mqtt://localhost:1883` | Broker |
 | `RUSTHINQ_MQTT_USER`, `RUSTHINQ_MQTT_PASSWORD` | empty | Broker login |
@@ -83,10 +83,12 @@ Either environment variables, or your own `config.toml`:
 2. Install **Rusthinq**, set the options ([DOCS.md](rusthinq/DOCS.md)) and start it.
 
 The add-on runs on the host network, pulls `3735943886/rusthinq:<add-on version>`, and
-turns its options into the same `RUSTHINQ_*` settings as above. Rhai scripts go in the
-add-on's config folder under `scripts/`. It needs an MQTT broker (the Mosquitto add-on) and
-something that maps rusthinq's topics to entities; rusthinq itself is not Home Assistant
-specific.
+turns its options into the same `RUSTHINQ_*` settings as above. With `mqtt_url` left empty
+it asks the Supervisor for the Mosquitto add-on's address and a login. Rhai scripts go in the
+add-on's config folder under `scripts/`, and a hand-written `config.toml` next to them
+replaces the options (the add-on writes `config.toml.example` there on every start). It
+also needs something that maps rusthinq's topics to entities; rusthinq itself is not Home
+Assistant specific.
 
 **No SoftAP provisioning from the add-on.** Putting Wi-Fi credentials into an appliance with
 `rusthinq-setup` needs a machine joined to the appliance's SoftAP network, and the add-on

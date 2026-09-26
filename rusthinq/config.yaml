@@ -14,25 +14,33 @@ host_network: true
 init: false
 startup: services
 boot: auto
+# Lets the entrypoint ask the Supervisor for the Mosquitto add-on's address and a
+# login when mqtt_url is left empty.
+hassio_api: true
+services:
+  - mqtt:want
 # The add-on's own config directory (/config inside the container): Rhai device
-# scripts go in its scripts/ folder.
+# scripts go in its scripts/ folder, and a hand-written config.toml next to them.
 map:
   - addon_config:rw
 options:
-  hostname: "rusthinq.local"
+  # Not .local: that is mDNS, which appliances don't do.
+  hostname: "rusthinq.lan"
   advertise_requested_host: false
-  # Mosquitto's add-on publishes 1883 on the host, and this add-on shares the host
-  # network, so localhost reaches it.
-  mqtt_url: "mqtt://localhost:1883"
+  # Empty: use the broker the Supervisor provides (the Mosquitto add-on).
+  mqtt_url: ""
   prefix: "rusthinq"
   bridge: false
+  # DoH by IP address: the LG hostnames are redirected to rusthinq, and the bridge has
+  # to get past that. Clear it to use the host's resolver.
+  bridge_dns: "https://1.1.1.1/dns-query,https://8.8.8.8/dns-query"
   scripting: true
   gui: false
   log: "status,HTTPS,bridge"
 schema:
   hostname: "str"
   advertise_requested_host: "bool"
-  mqtt_url: "str"
+  mqtt_url: "str?"
   mqtt_user: "str?"
   mqtt_password: "password?"
   prefix: "str"

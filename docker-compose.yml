@@ -14,7 +14,7 @@ services:
       TZ: Asia/Seoul
       # Used only while ./data/config.toml does not exist; drop a config.toml in
       # there instead to take over completely (see README).
-      RUSTHINQ_HOSTNAME: rusthinq.local # a name the appliances resolve to this host
+      RUSTHINQ_HOSTNAME: rusthinq.lan # a name the appliances resolve to this host
       RUSTHINQ_MQTT_URL: mqtt://localhost:1883
       # RUSTHINQ_MQTT_USER: ""
       # RUSTHINQ_MQTT_PASSWORD: ""

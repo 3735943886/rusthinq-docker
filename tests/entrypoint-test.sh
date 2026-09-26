@@ -34,7 +34,7 @@ reject() { # reject <name> <fixed string>
 }
 
 run defaults
-expect defaults 'hostname = "rusthinq.local"'
+expect defaults 'hostname = "rusthinq.lan"'
 expect defaults 'https_port = 443'
 expect defaults 'mqtts_port = 8883'
 expect defaults 'mqtt_url = "mqtt://localhost:1883"'
@@ -57,10 +57,11 @@ reject noraw 'raw_prefix'
 reject noraw '[scripting]'
 
 # Home Assistant: options.json becomes RUSTHINQ_* variables, scripts go to /config.
-printf '%s' '{"hostname":"ha.local","bridge":true,"advertise_requested_host":false,"mqtt_user":"u","gui_port":8080,"gui":true,"gui_user":"a","gui_password":"b","il_prefix":null}' \
+printf '%s' '{"hostname":"ha.local","bridge":true,"mqtt_url":"mqtt://10.0.0.5:1883","advertise_requested_host":false,"mqtt_user":"u","gui_port":8080,"gui":true,"gui_user":"a","gui_password":"b","il_prefix":null}' \
     > "$TMP/options.json"
-run ha SUPERVISOR_TOKEN=x RUSTHINQ_OPTIONS_FILE="$TMP/options.json"
+run ha SUPERVISOR_TOKEN=x RUSTHINQ_OPTIONS_FILE="$TMP/options.json" RUSTHINQ_CONFIG_DIR="$TMP/nowhere"
 expect ha 'hostname = "ha.local"'
+expect ha 'mqtt_url = "mqtt://10.0.0.5:1883"'
 expect ha '[bridge]'
 expect ha 'mqtt_user = "u"'
 expect ha 'rhai_dir = "/config/scripts"'
@@ -68,9 +69,63 @@ expect ha 'gui_port = 8080'
 reject ha 'advertise_requested_host'
 reject ha 'il_prefix'
 
+# The add-on writes config.toml.example to its config directory, with the paths
+# pointing back into the data directory.
+mkdir -p "$TMP/haconf"
+run haexample SUPERVISOR_TOKEN=x RUSTHINQ_OPTIONS_FILE="$TMP/options.json" RUSTHINQ_CONFIG_DIR="$TMP/haconf"
+ex="$TMP/haconf/config.toml.example"
+if [ -f "$ex" ]; then
+    grep -qF "ca_key_file = \"$TMP/haexample.data/ca.key\"" "$ex" || { echo "FAIL haexample: ca path"; cat "$ex"; fail=1; }
+    grep -qF "storage_path = \"$TMP/haexample.data/state\"" "$ex" || { echo "FAIL haexample: state path"; cat "$ex"; fail=1; }
+else
+    echo "FAIL haexample: no config.toml.example"; fail=1
+fi
+expect haexample 'ca_key_file = "ca.key"'
+expect haexample 'storage_path = "./state"'
+
+# ... and a config.toml there wins over the options.
+printf 'hostname = "hand.lan"\n' > "$TMP/haconf/config.toml"
+env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/haown.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
+    RUSTHINQ_OPTIONS_FILE="$TMP/options.json" RUSTHINQ_CONFIG_DIR="$TMP/haconf" \
+    "$ROOT/docker-entrypoint.sh" > "$TMP/haown.out"
+grep -qF 'hostname = "hand.lan"' "$TMP/haown.out" || { echo "FAIL haown: config.toml not used"; fail=1; }
+# ... without asking the Supervisor for a broker (nothing answers here).
+printf '%s' '{"mqtt_url":""}' > "$TMP/nourl.json"
+env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/haown2.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
+    RUSTHINQ_OPTIONS_FILE="$TMP/nourl.json" RUSTHINQ_CONFIG_DIR="$TMP/haconf" \
+    RUSTHINQ_SUPERVISOR_URL="http://127.0.0.1:9" "$ROOT/docker-entrypoint.sh" > "$TMP/haown2.out" 2>&1 ||
+    { echo "FAIL haown2: config.toml did not skip the Supervisor lookup"; cat "$TMP/haown2.out"; fail=1; }
+
+# No mqtt_url: the broker comes from the Supervisor's MQTT service.
+if command -v python3 >/dev/null && command -v wget >/dev/null; then
+    mkdir -p "$TMP/sv/services"
+    printf '%s' '{"result":"ok","data":{"host":"core-mosquitto.invalid","port":1883,"ssl":false,"username":"addons","password":"p w"}}' \
+        > "$TMP/sv/services/mqtt"
+    port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
+    python3 -m http.server -b 127.0.0.1 -d "$TMP/sv" "$port" >/dev/null 2>&1 &
+    srv=$!
+    i=0; until wget -qO- "http://127.0.0.1:$port/services/mqtt" >/dev/null 2>&1 || [ $i -ge 50 ]; do
+        i=$((i + 1)); sleep 0.1
+    done
+    run supervisor SUPERVISOR_TOKEN=x RUSTHINQ_OPTIONS_FILE="$TMP/nourl.json" \
+        RUSTHINQ_CONFIG_DIR="$TMP/nowhere" RUSTHINQ_SUPERVISOR_URL="http://127.0.0.1:$port"
+    expect supervisor 'mqtt_url = "mqtt://localhost:1883"'
+    expect supervisor 'mqtt_user = "addons"'
+    expect supervisor 'mqtt_pass = "p w"'
+    kill "$srv"
+    # With nothing answering, starting without a broker is refused.
+    if env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/nobroker.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
+        RUSTHINQ_OPTIONS_FILE="$TMP/nourl.json" RUSTHINQ_CONFIG_DIR="$TMP/nowhere" \
+        RUSTHINQ_SUPERVISOR_URL="http://127.0.0.1:$port" "$ROOT/docker-entrypoint.sh" >/dev/null 2>&1; then
+        echo "FAIL nobroker: accepted"; fail=1
+    fi
+else
+    echo "skipping the Supervisor MQTT tests (needs python3 and wget)"
+fi
+
 # Outside Home Assistant an options.json is left alone.
 run plain RUSTHINQ_OPTIONS_FILE="$TMP/options.json"
-expect plain 'hostname = "rusthinq.local"'
+expect plain 'hostname = "rusthinq.lan"'
 
 # A user-owned config.toml wins over the environment.
 mkdir -p "$TMP/own.data"
