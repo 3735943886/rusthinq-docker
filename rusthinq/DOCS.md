@@ -42,7 +42,7 @@ knows nothing about Home Assistant.
 | `bridge_dns` | `https://1.1.1.1/dns-query,https://8.8.8.8/dns-query` | DNS servers the bridge uses to find the real LG servers, past the redirect that points the appliances at rusthinq. Comma separated DoH URLs or addresses; empty uses this host's own resolver. |
 | `scripting` | on | Rhai device scripts. Put `<modelId>.rhai` files in the add-on's config folder, under `scripts/`. |
 | `il_prefix` | empty | Let scripts publish an IL device descriptor under this prefix. |
-| `gui`, `gui_port`, `gui_user`, `gui_password` | on, `44401` | The web dashboard. Set a user and password: it can enable the bridge and read raw traffic. |
+| `gui`, `gui_port`, `gui_user`, `gui_password` | on, `44401`, `admin`, `change-me` | The web dashboard. Change the default password: it can enable the bridge and read raw traffic. |
 | `log` | `status,HTTPS,bridge` | Log topics, comma separated. |
 
 ## A hand-written config.toml

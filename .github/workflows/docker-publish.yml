@@ -60,11 +60,14 @@ jobs:
         # with a suffix (0.1.0-dev1, -rc1, ...) only gets its exact tag.
         run: |
           tags="$IMAGE:$VERSION"
+          stable=false
           if printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            stable=true
             tags="$tags,$IMAGE:${VERSION%.*},$IMAGE:latest"
           fi
           echo "Will push: $tags"
           echo "tags=$tags" >> "$GITHUB_OUTPUT"
+          echo "stable=$stable" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -85,8 +88,9 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
 
       # The add-on pulls 3735943886/rusthinq:<its own version>, so its version moves
-      # only once that image exists.
+      # only once a stable release image exists.
       - name: Point the add-on at this version
+        if: steps.tags.outputs.stable == 'true'
         run: |
           sed -i "s/^version: .*/version: \"$VERSION\"/" rusthinq/config.yaml
           if ! grep -q "^## $VERSION\$" rusthinq/CHANGELOG.md; then

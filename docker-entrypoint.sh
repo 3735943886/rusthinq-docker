@@ -41,7 +41,9 @@ die() {
 
 # A TOML basic string.
 toml_str() {
-    printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
+    # JSON escapes also work in TOML basic strings. TOML additionally requires
+    # DEL to be escaped; slurping stdin preserves trailing newlines in passwords.
+    printf '%s' "$1" | jq -Rs '@json | gsub("\u007f"; "\\u007f")' -r
 }
 
 # "a, b,c" -> ["a", "b", "c"]

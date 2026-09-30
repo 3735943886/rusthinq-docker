@@ -105,7 +105,8 @@ Publishing a rusthinq release does not touch this repository by itself. To packa
   workflow send `repository_dispatch` `rusthinq-release` with `client_payload.tag`.
 - It downloads that release's linux archives, pushes the multi-arch image
   (`:0.1.0`, plus `:0.1` and `:latest` for a plain `X.Y.Z`), then commits the new version
-  into `rusthinq/config.yaml`. The add-on version moves only after the image exists.
+  into `rusthinq/config.yaml` for a stable release. The add-on version moves only after
+  the image exists; prereleases only publish their exact image tag.
 
 Repository secrets: `DOCKER_USERNAME` and `DOCKER_PASSWORD` (Docker Hub), and
 `RUSTHINQ_TOKEN`, a token that can read the rusthinq repository's releases (needed while

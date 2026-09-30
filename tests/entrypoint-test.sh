@@ -64,6 +64,35 @@ expect everything 'gui_pass = "p\"a\\ss"'
 expect everything 'mqtt_pass = "se\"cret\\"'
 expect everything 'log = ["status", "incoming"]'
 
+# Passwords must survive TOML serialization, including trailing newlines and
+# every control character that can be carried in an environment variable.
+if command -v python3 >/dev/null && python3 -c 'import tomllib' 2>/dev/null; then
+    python3 - "$ROOT" "$TMP" <<'PY' || fail=1
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tomllib
+
+root, tmp = map(Path, sys.argv[1:])
+passwords = ['line1\nline2', 'trailing\n\n', ''.join(map(chr, range(1, 32))) + '\x7f', '한글"\\password']
+for index, password in enumerate(passwords):
+    data = tmp / f'password-{index}'
+    env = {
+        'PATH': os.environ['PATH'],
+        'RUSTHINQ_DATA_DIR': str(data),
+        'RUSTHINQ_DRY_RUN': '1',
+        'RUSTHINQ_MQTT_PASSWORD': password,
+        'RUSTHINQ_GUI_USER': 'admin',
+        'RUSTHINQ_GUI_PASSWORD': password,
+    }
+    subprocess.run([str(root / 'docker-entrypoint.sh')], env=env, check=True, capture_output=True)
+    config = tomllib.loads((data / 'config.generated.toml').read_text())
+    assert config['mqtt']['mqtt_pass'] == password, f'MQTT password roundtrip failed: {index}'
+    assert config['gui']['gui_pass'] == password, f'GUI password roundtrip failed: {index}'
+PY
+fi
+
 run noraw RUSTHINQ_RAW_PREFIX= RUSTHINQ_SCRIPTING=false
 reject noraw 'raw_prefix'
 reject noraw '[scripting]'
