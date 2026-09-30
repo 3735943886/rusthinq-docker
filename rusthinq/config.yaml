@@ -1,5 +1,5 @@
 name: "Rusthinq"
-version: "0.0.0"
+version: "0.1.0"
 slug: rusthinq
 description: "LG ThinQ local cloud emulator: local MQTT control of LG appliances, optional bridge to the LG cloud"
 url: "https://github.com/3735943886/rusthinq-docker"
