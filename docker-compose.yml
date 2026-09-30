@@ -18,7 +18,7 @@ services:
       RUSTHINQ_MQTT_URL: mqtt://localhost:1883
       # RUSTHINQ_MQTT_USER: ""
       # RUSTHINQ_MQTT_PASSWORD: ""
-      # RUSTHINQ_BRIDGE: "true"   # forward to the real LG cloud
-      # RUSTHINQ_GUI: "true"      # web dashboard on :44401
-      # RUSTHINQ_GUI_USER: admin
-      # RUSTHINQ_GUI_PASSWORD: change-me
+      # The bridge to the real LG cloud and the web dashboard (:44401) are on by
+      # default; set RUSTHINQ_BRIDGE / RUSTHINQ_GUI to "false" to turn them off.
+      RUSTHINQ_GUI_USER: admin
+      RUSTHINQ_GUI_PASSWORD: change-me

@@ -60,17 +60,17 @@ Either environment variables, or your own `config.toml`:
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `RUSTHINQ_HOSTNAME` | `rusthinq.lan` | Name appliances are told to connect to. Not an IP address, and not a `.local` name: appliances don't do mDNS |
-| `RUSTHINQ_ADVERTISE_REQUESTED_HOST` | off | Answer with the name the appliance asked for |
+| `RUSTHINQ_ADVERTISE_REQUESTED_HOST` | on | Answer with the name the appliance asked for |
 | `RUSTHINQ_MQTT_URL` | `mqtt://localhost:1883` | Broker |
 | `RUSTHINQ_MQTT_USER`, `RUSTHINQ_MQTT_PASSWORD` | empty | Broker login |
 | `RUSTHINQ_PREFIX` | `rusthinq` | Topic prefix |
 | `RUSTHINQ_RAW_PREFIX` | `rusthinq-raw` | Raw frame bus prefix; set it empty to turn the bus off |
 | `RUSTHINQ_RAW` | `rx,tx,clip_tx,inject,inject_clip,emit` | Raw bus streams |
-| `RUSTHINQ_BRIDGE` | off | Forward to the real LG cloud (state in `/data/state`) |
-| `RUSTHINQ_BRIDGE_DNS` | empty | DNS / DoH servers for the bridge, comma separated |
+| `RUSTHINQ_BRIDGE` | on | Forward to the real LG cloud (state in `/data/state`) |
+| `RUSTHINQ_BRIDGE_DNS` | `https://1.1.1.1/dns-query,https://8.8.8.8/dns-query` | DNS / DoH servers for the bridge, comma separated; set it empty to use the host's resolver |
 | `RUSTHINQ_SCRIPTING` | on | Rhai device scripts from `RUSTHINQ_SCRIPTS_DIR` (default `/scripts`) |
 | `RUSTHINQ_IL_PREFIX` | empty | IL descriptor prefix for scripts |
-| `RUSTHINQ_GUI` | off | Dashboard on `RUSTHINQ_GUI_PORT` (default 44401) |
+| `RUSTHINQ_GUI` | on | Dashboard on `RUSTHINQ_GUI_PORT` (default 44401) |
 | `RUSTHINQ_GUI_USER`, `RUSTHINQ_GUI_PASSWORD` | empty | Dashboard login. Set them: it can control the bridge |
 | `RUSTHINQ_LOG` | `status,HTTPS,bridge` | Log topics, comma separated |
 

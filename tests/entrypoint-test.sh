@@ -40,8 +40,20 @@ expect defaults 'mqtts_port = 8883'
 expect defaults 'mqtt_url = "mqtt://localhost:1883"'
 expect defaults 'raw_prefix = "rusthinq-raw"'
 expect defaults 'rhai_dir = "/scripts"'
-reject defaults '[bridge]'
-reject defaults '[gui]'
+expect defaults 'log = ["status", "HTTPS", "bridge"]'
+expect defaults 'advertise_requested_host = true'
+expect defaults '[bridge]'
+expect defaults 'dns = ["https://1.1.1.1/dns-query", "https://8.8.8.8/dns-query"]'
+expect defaults 'gui_port = 44401'
+
+run off RUSTHINQ_BRIDGE=false RUSTHINQ_GUI=false RUSTHINQ_ADVERTISE_REQUESTED_HOST=false
+reject off '[bridge]'
+reject off '[gui]'
+reject off 'advertise_requested_host'
+
+run hostdns RUSTHINQ_BRIDGE_DNS=
+expect hostdns '[bridge]'
+reject hostdns 'dns = '
 
 run everything RUSTHINQ_BRIDGE=true RUSTHINQ_BRIDGE_DNS="https://1.1.1.1/dns-query, 8.8.8.8" \
     RUSTHINQ_GUI=True RUSTHINQ_GUI_USER=admin RUSTHINQ_GUI_PASSWORD='p"a\ss' \

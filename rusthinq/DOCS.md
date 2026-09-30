@@ -33,16 +33,16 @@ knows nothing about Home Assistant.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `hostname` | `rusthinq.lan` | The name appliances are told to connect to. |
-| `advertise_requested_host` | off | Answer with the name an appliance asked for instead of `hostname`. Only for appliances redirected at the router. |
+| `advertise_requested_host` | on | Answer with the name an appliance asked for instead of `hostname`. Only for appliances redirected at the router. |
 | `mqtt_url` | empty | MQTT broker. Leave it empty to use the Mosquitto add-on: the Supervisor hands over its address and a login. Set it (e.g. `mqtt://192.168.1.10:1883`) for any other broker. |
 | `mqtt_user`, `mqtt_password` | empty | Broker login, only with your own `mqtt_url`. |
 | `prefix` | `rusthinq` | Topic prefix for rusthinq's own topics. |
 | `raw_prefix`, `raw` | `rusthinq-raw`, `rx,tx,clip_tx,inject,inject_clip,emit` | The raw wire-frame bus (see rusthinq's `config.toml`). |
-| `bridge` | off | Forward adopted appliances to the real LG cloud, so the LG app keeps working. Log in from the dashboard or over MQTT. |
+| `bridge` | on | Forward adopted appliances to the real LG cloud, so the LG app keeps working. Log in from the dashboard or over MQTT. |
 | `bridge_dns` | `https://1.1.1.1/dns-query,https://8.8.8.8/dns-query` | DNS servers the bridge uses to find the real LG servers, past the redirect that points the appliances at rusthinq. Comma separated DoH URLs or addresses; empty uses this host's own resolver. |
 | `scripting` | on | Rhai device scripts. Put `<modelId>.rhai` files in the add-on's config folder, under `scripts/`. |
 | `il_prefix` | empty | Let scripts publish an IL device descriptor under this prefix. |
-| `gui`, `gui_port`, `gui_user`, `gui_password` | off, `44401` | The web dashboard. Set a user and password: it can enable the bridge and read raw traffic. |
+| `gui`, `gui_port`, `gui_user`, `gui_password` | on, `44401` | The web dashboard. Set a user and password: it can enable the bridge and read raw traffic. |
 | `log` | `status,HTTPS,bridge` | Log topics, comma separated. |
 
 ## A hand-written config.toml

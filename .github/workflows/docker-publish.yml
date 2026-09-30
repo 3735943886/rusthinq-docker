@@ -9,8 +9,8 @@ name: Docker
 #
 # Secrets:
 #   DOCKER_USERNAME / DOCKER_PASSWORD   Docker Hub login, as for rustuya-manager
-#   RUSTHINQ_TOKEN                      a token that can read the rusthinq repository's
-#                                       releases (needed while that repository is private)
+#   RUSTHINQ_TOKEN                      optional: a token that can read the rusthinq
+#                                       repository's releases, only if it goes private again
 on:
   workflow_dispatch:
     inputs:
@@ -51,7 +51,7 @@ jobs:
 
       - name: Fetch rusthinq binaries
         env:
-          GH_TOKEN: ${{ secrets.RUSTHINQ_TOKEN }}
+          GH_TOKEN: ${{ secrets.RUSTHINQ_TOKEN || github.token }}
         run: scripts/fetch-release.sh "$TAG"
 
       - name: Decide image tags

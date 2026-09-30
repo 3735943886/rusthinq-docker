@@ -26,16 +26,16 @@ map:
 options:
   # Not .local: that is mDNS, which appliances don't do.
   hostname: "rusthinq.lan"
-  advertise_requested_host: false
+  advertise_requested_host: true
   # Empty: use the broker the Supervisor provides (the Mosquitto add-on).
   mqtt_url: ""
   prefix: "rusthinq"
-  bridge: false
+  bridge: true
   # DoH by IP address: the LG hostnames are redirected to rusthinq, and the bridge has
   # to get past that. Clear it to use the host's resolver.
   bridge_dns: "https://1.1.1.1/dns-query,https://8.8.8.8/dns-query"
   scripting: true
-  gui: false
+  gui: true
   log: "status,HTTPS,bridge"
 schema:
   hostname: "str"

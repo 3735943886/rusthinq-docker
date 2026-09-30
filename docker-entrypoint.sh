@@ -69,7 +69,7 @@ require_port() {
 generate_config() {
     p="${1:-}"
     printf 'hostname = %s\n' "$(toml_str "${RUSTHINQ_HOSTNAME:-rusthinq.lan}")"
-    if bool "${RUSTHINQ_ADVERTISE_REQUESTED_HOST:-}"; then
+    if bool "${RUSTHINQ_ADVERTISE_REQUESTED_HOST:-true}"; then
         echo 'advertise_requested_host = true'
     fi
     printf 'ca_key_file = %s\n' "$(toml_str "${p}ca.key")"
@@ -91,12 +91,20 @@ generate_config() {
         printf 'raw = %s\n' "$(toml_list "${RUSTHINQ_RAW:-rx,tx,clip_tx,inject,inject_clip,emit}")"
     fi
 
-    if bool "${RUSTHINQ_BRIDGE:-}"; then
+    if bool "${RUSTHINQ_BRIDGE:-true}"; then
         echo
         echo '[bridge]'
         printf 'storage_path = %s\n' "$(toml_str "${p:-./}state")"
-        if [ -n "${RUSTHINQ_BRIDGE_DNS:-}" ]; then
-            printf 'dns = %s\n' "$(toml_list "$RUSTHINQ_BRIDGE_DNS")"
+        # The LG hostnames are redirected to rusthinq, so the bridge defaults to DoH by
+        # IP address to get past that; set it empty to use the host's resolver. (The
+        # add-on always passes its own bridge_dns option, cleared means empty.)
+        if [ "$HA_ADDON" = true ]; then
+            bridge_dns="${RUSTHINQ_BRIDGE_DNS:-}"
+        else
+            bridge_dns="${RUSTHINQ_BRIDGE_DNS-https://1.1.1.1/dns-query,https://8.8.8.8/dns-query}"
+        fi
+        if [ -n "$bridge_dns" ]; then
+            printf 'dns = %s\n' "$(toml_list "$bridge_dns")"
         fi
     fi
 
@@ -110,7 +118,7 @@ generate_config() {
         fi
     fi
 
-    if bool "${RUSTHINQ_GUI:-}"; then
+    if bool "${RUSTHINQ_GUI:-true}"; then
         gui_port="${RUSTHINQ_GUI_PORT:-44401}"
         require_port RUSTHINQ_GUI_PORT "$gui_port"
         echo

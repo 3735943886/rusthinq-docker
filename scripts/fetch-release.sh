@@ -4,9 +4,7 @@
 #
 #   scripts/fetch-release.sh v0.1.0
 #
-# Needs the GitHub CLI, logged in (or GH_TOKEN set) with read access to the
-# rusthinq repository -- its releases are only visible to accounts that can
-# read the repo.
+# Needs the GitHub CLI, logged in (or GH_TOKEN set).
 set -eu
 
 TAG="${1:?usage: $0 <release tag, e.g. v0.1.0>}"
