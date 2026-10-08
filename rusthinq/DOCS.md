@@ -1,62 +1,66 @@
-# Rusthinq add-on
+# Rusthinq 0.2 add-on
 
-Runs [rusthinq](https://github.com/3735943886/rusthinq) on Home Assistant. Rusthinq
-publishes everything to MQTT, so Home Assistant needs an MQTT broker (the Mosquitto
-add-on) and something that turns rusthinq's topics into entities; rusthinq itself
-knows nothing about Home Assistant.
+The default add-on uses the 0.2 runtime. **Rusthinq Legacy (0.1)** preserves the old
+runtime with its own options and separate storage.
 
-## Before you start
-
-- Appliances must be able to reach this host on **443**, **8883**, **46030** and
-  **47878**. The add-on runs on the host network for that reason, so nothing else on
-  the Home Assistant host may be using those ports.
-- **The Mosquitto add-on takes 8883 by default.** Clear its `8883/tcp` port in
-  Mosquitto's **Configuration → Network** section before starting this add-on, or rusthinq
-  cannot listen for the appliances' MQTTS connections.
-- Point the appliances at rusthinq, by DNS or a router redirect, as described in the
-  [rethink installation guide](https://github.com/anszom/rethink/wiki/Installing-rethink‐cloud).
-  `hostname` below is the name they will be told to use, so it has to resolve to this
-  host through your network's DNS. It can't be an IP address, and a `.local` name won't
-  do: that is mDNS, which appliances don't speak.
-- The add-on cannot put Wi-Fi credentials into a new appliance (SoftAP setup with
-  `rusthinq-setup`): that needs a machine connected to the appliance's own Wi-Fi network,
-  which the Home Assistant host normally is not. Do that step from a PC, using the
-  release binary or `docker run --rm --network host 3735943886/rusthinq rusthinq-setup ...`,
-  and give the appliance the same `hostname` as below. Appliances already paired to LG and
-  redirected to rusthinq need no setup step.
-- Rusthinq creates its own certificate authority on first start and keeps it in the
-  add-on's data. Appliances pin it: once they are set up, **back up this add-on**
-  before removing it, or you will have to set them up again.
+Appliances must reach this host on 443, 8883, 46030 and 47878. If Mosquitto publishes
+8883, clear its `8883/tcp` host port before starting Rusthinq. Configure your DNS or
+router to direct appliance traffic to this host; `hostname` must be a resolvable DNS
+name, not `.local`. SoftAP setup still requires a PC on the appliance Wi-Fi.
 
 ## Options
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `hostname` | `rusthinq.lan` | The name appliances are told to connect to. |
-| `advertise_requested_host` | on | Answer with the name an appliance asked for instead of `hostname`. Only for appliances redirected at the router. |
-| `mqtt_url` | empty | MQTT broker. Leave it empty to use the Mosquitto add-on: the Supervisor hands over its address and a login. Set it (e.g. `mqtt://192.168.1.10:1883`) for any other broker. |
-| `mqtt_user`, `mqtt_password` | empty | Broker login, only with your own `mqtt_url`. |
-| `prefix` | `rusthinq` | Topic prefix for rusthinq's own topics. |
-| `raw_prefix`, `raw` | `rusthinq-raw`, `rx,tx,clip_tx,inject,inject_clip,emit` | The raw wire-frame bus (see rusthinq's `config.toml`). |
-| `bridge` | on | Forward adopted appliances to the real LG cloud, so the LG app keeps working. Log in from the dashboard or over MQTT. |
-| `bridge_dns` | `https://1.1.1.1/dns-query,https://8.8.8.8/dns-query` | DNS servers the bridge uses to find the real LG servers, past the redirect that points the appliances at rusthinq. Comma separated DoH URLs or addresses; empty uses this host's own resolver. |
-| `scripting` | on | Rhai device scripts. Put `<modelId>.rhai` files in the add-on's config folder, under `scripts/`. |
-| `il_prefix` | empty | Let scripts publish an IL device descriptor under this prefix. |
-| `gui`, `gui_port`, `gui_user`, `gui_password` | on, `44401`, `admin`, `change-me` | The web dashboard. Change the default password: it can enable the bridge and read raw traffic. |
-| `log` | `status,HTTPS,bridge` | Log topics, comma separated. |
+`mqtt_url` left empty uses the Supervisor's Mosquitto broker and credentials.
+Set it explicitly for another broker. `mqtt_user` and `mqtt_password` provide its
+credentials. `prefix` is the driver topic prefix. `scripting` enables drivers in the
+add-on config folder's `scripts/` directory.
 
-## A hand-written config.toml
+`bridge` configures the LG account checkpoint. Log in and manage pairing in the
+0.2 dashboard/API. `bridge_dns` is a comma-separated resolver list; clearing it uses
+system DNS. `legacy_tls` defaults to true for older appliances.
 
-The options cover the common cases. For anything else — `custom_root_cert_file`, other
-ports, advertised URLs behind a proxy, the rest of rusthinq's
-[`config.toml`](https://github.com/3735943886/rusthinq/blob/master/config.toml) — put a
-`config.toml` in the add-on's config folder (`/addon_configs/<slug>/` over Samba or SSH,
-next to `scripts/`). While it exists every option above is ignored, the MQTT lookup
-included.
+`management` enables the API on `gui_port` (44401). `gui` controls the dashboard;
+the API remains available with GUI off. Set `gui_user` and `gui_password` before
+use. `raw_inject_toggle` defaults to false. Legacy raw MQTT, `il_prefix`, and `log`
+options do not exist in this add-on.
 
-Start from `config.toml.example`, which the add-on writes there on every start from your
-current options. Its file paths point into the add-on's private data (`/data/ca.key`,
-`/data/state`), so a copy keeps using the same CA and bridge login. Keep them that way: a
-relative `ca_key_file` would make rusthinq create a new CA, and appliances set up with the
-old one would have to be set up again. The example holds your MQTT and dashboard
-passwords, like the options do.
+On a fresh installation the wrapper creates the CA once in private `/data`.
+Back up the add-on: appliances pin this CA. It is never replaced automatically.
+
+## Custom config
+
+Place a 0.2 `config.toml` in the add-on config folder (`/config` inside the add-on).
+It overrides options and Supervisor MQTT discovery. `config.toml.example` is written
+there at startup with absolute `/data` paths. Custom configuration must reference
+an existing valid CA. See upstream runtime/operations guides for the schema.
+
+## Migrating an existing 0.1 installation
+
+Stop the old add-on and back it up. Export its active configuration, CA, state and
+scripts from the backup. The two add-ons have separate private `/data`; installing
+0.2 does not give it access to 0.1 data.
+
+A portable migration can keep the exported installation under the new add-on's
+user-visible config folder:
+
+1. Create `legacy/` in the new add-on config folder and put exported data there.
+   Put compatible drivers under `scripts/`.
+2. Prepare a copy of the old TOML whose file paths reference `/config/legacy/...`
+   and whose scripts reference `/config/scripts`. Keep originals in the backup.
+3. On a PC with Docker, mount this entire new config folder at `/config` and run:
+
+   ```sh
+   docker run --rm -v "$PWD/addon-config:/config" \
+     3735943886/rusthinq:0.2 \
+     rusthinq-migrate /config/legacy/config.toml /config/v2
+   ```
+
+4. Review `v2/config.toml` and `v2/migration.json`; copy the reviewed TOML to the
+   config folder's `config.toml`. Keep `/config/legacy` and `/config/v2` in place:
+   the generated absolute references must resolve inside the add-on.
+5. Start only the 0.2 add-on. Review LG registration archives and adopt them through
+   management as needed; migration does not automatically enable archived devices.
+
+Back up this config folder too, since it now holds migrated CA and state. To roll
+back, stop 0.2 and restore/start the original 0.1 add-on with its original scripts
+and configuration. Reconcile any LG registration changes made after cutover.

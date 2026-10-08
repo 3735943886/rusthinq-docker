@@ -2,7 +2,7 @@
 # host networking is the straightforward way to run it.
 services:
   rusthinq:
-    image: 3735943886/rusthinq:latest
+    image: 3735943886/rusthinq:0.2
     container_name: rusthinq
     restart: unless-stopped
     network_mode: host

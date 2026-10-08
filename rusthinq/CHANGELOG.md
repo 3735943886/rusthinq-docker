@@ -1,7 +1,6 @@
 # Changelog
 
-Add-on versions follow the rusthinq release they package.
+## 0.2.0-dev
 
-## 0.1.0
-
-- Packages rusthinq v0.1.0.
+- Package the 0.2 runtime with its native configuration and migration tool.
+- Keep 0.1 available through the separate legacy add-on.

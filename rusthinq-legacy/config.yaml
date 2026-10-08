@@ -1,0 +1,59 @@
+name: "Rusthinq Legacy (0.1)"
+version: "0.1.0"
+slug: rusthinq_legacy
+description: "LG ThinQ local cloud emulator: local MQTT control of LG appliances, optional bridge to the LG cloud"
+url: "https://github.com/3735943886/rusthinq-docker"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+image: "3735943886/rusthinq"
+# Appliances reach rusthinq on fixed ports (443, 8883, 46030, 47878) that they
+# resolve through DNS or a router redirect, so it has to sit on the host network.
+host_network: true
+init: false
+startup: services
+boot: auto
+# Lets the entrypoint ask the Supervisor for the Mosquitto add-on's address and a
+# login when mqtt_url is left empty.
+hassio_api: true
+services:
+  - mqtt:want
+# The add-on's own config directory (/config inside the container): Rhai device
+# scripts go in its scripts/ folder, and a hand-written config.toml next to them.
+map:
+  - addon_config:rw
+options:
+  # Not .local: that is mDNS, which appliances don't do.
+  hostname: "rusthinq.lan"
+  advertise_requested_host: true
+  # Empty: use the broker the Supervisor provides (the Mosquitto add-on).
+  mqtt_url: ""
+  prefix: "rusthinq"
+  bridge: true
+  # DoH by IP address: the LG hostnames are redirected to rusthinq, and the bridge has
+  # to get past that. Clear it to use the host's resolver.
+  bridge_dns: "https://1.1.1.1/dns-query,https://8.8.8.8/dns-query"
+  scripting: true
+  gui: true
+  gui_user: "admin"
+  gui_password: "change-me"
+  log: "status,HTTPS,bridge"
+schema:
+  hostname: "str"
+  advertise_requested_host: "bool"
+  mqtt_url: "str?"
+  mqtt_user: "str?"
+  mqtt_password: "password?"
+  prefix: "str"
+  raw_prefix: "str?"
+  raw: "str?"
+  bridge: "bool"
+  bridge_dns: "str?"
+  scripting: "bool"
+  il_prefix: "str?"
+  gui: "bool"
+  gui_port: "port?"
+  gui_user: "str?"
+  gui_password: "password?"
+  log: "str"

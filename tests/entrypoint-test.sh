@@ -3,6 +3,9 @@
 # (RUSTHINQ_DRY_RUN prints the config and exits). Needs jq and, to check the
 # TOML really parses, python3 >= 3.11.
 set -eu
+export RUSTHINQ_RUNTIME_SERIES=0.1
+RUSTHINQ_CONFIG_LIB="$(cd "$(dirname "$0")/../config" && pwd)"
+export RUSTHINQ_CONFIG_LIB
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TMP="$(mktemp -d)"
@@ -14,7 +17,7 @@ run() {
     name="$1"; shift
     dir="$TMP/$name.data"
     mkdir -p "$dir"
-    env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$dir" RUSTHINQ_DRY_RUN=1 "$@" \
+    env -i RUSTHINQ_RUNTIME_SERIES=0.1 RUSTHINQ_CONFIG_LIB="$ROOT/config" PATH="$PATH" RUSTHINQ_DATA_DIR="$dir" RUSTHINQ_DRY_RUN=1 "$@" \
         "$ROOT/docker-entrypoint.sh" > "$TMP/$name.out" 2> "$TMP/$name.err" || {
         echo "FAIL $name: entrypoint exited non-zero"; cat "$TMP/$name.err"; fail=1; return
     }
@@ -80,6 +83,8 @@ for index, password in enumerate(passwords):
     data = tmp / f'password-{index}'
     env = {
         'PATH': os.environ['PATH'],
+        'RUSTHINQ_RUNTIME_SERIES': '0.1',
+        'RUSTHINQ_CONFIG_LIB': str(root / 'config'),
         'RUSTHINQ_DATA_DIR': str(data),
         'RUSTHINQ_DRY_RUN': '1',
         'RUSTHINQ_MQTT_PASSWORD': password,
@@ -126,13 +131,13 @@ expect haexample 'storage_path = "./state"'
 
 # ... and a config.toml there wins over the options.
 printf 'hostname = "hand.lan"\n' > "$TMP/haconf/config.toml"
-env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/haown.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
+env -i RUSTHINQ_RUNTIME_SERIES=0.1 RUSTHINQ_CONFIG_LIB="$ROOT/config" PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/haown.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
     RUSTHINQ_OPTIONS_FILE="$TMP/options.json" RUSTHINQ_CONFIG_DIR="$TMP/haconf" \
     "$ROOT/docker-entrypoint.sh" > "$TMP/haown.out"
 grep -qF 'hostname = "hand.lan"' "$TMP/haown.out" || { echo "FAIL haown: config.toml not used"; fail=1; }
 # ... without asking the Supervisor for a broker (nothing answers here).
 printf '%s' '{"mqtt_url":""}' > "$TMP/nourl.json"
-env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/haown2.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
+env -i RUSTHINQ_RUNTIME_SERIES=0.1 RUSTHINQ_CONFIG_LIB="$ROOT/config" PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/haown2.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
     RUSTHINQ_OPTIONS_FILE="$TMP/nourl.json" RUSTHINQ_CONFIG_DIR="$TMP/haconf" \
     RUSTHINQ_SUPERVISOR_URL="http://127.0.0.1:9" "$ROOT/docker-entrypoint.sh" > "$TMP/haown2.out" 2>&1 ||
     { echo "FAIL haown2: config.toml did not skip the Supervisor lookup"; cat "$TMP/haown2.out"; fail=1; }
@@ -155,7 +160,7 @@ if command -v python3 >/dev/null && command -v wget >/dev/null; then
     expect supervisor 'mqtt_pass = "p w"'
     kill "$srv"
     # With nothing answering, starting without a broker is refused.
-    if env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/nobroker.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
+    if env -i RUSTHINQ_RUNTIME_SERIES=0.1 RUSTHINQ_CONFIG_LIB="$ROOT/config" PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/nobroker.data" RUSTHINQ_DRY_RUN=1 SUPERVISOR_TOKEN=x \
         RUSTHINQ_OPTIONS_FILE="$TMP/nourl.json" RUSTHINQ_CONFIG_DIR="$TMP/nowhere" \
         RUSTHINQ_SUPERVISOR_URL="http://127.0.0.1:$port" "$ROOT/docker-entrypoint.sh" >/dev/null 2>&1; then
         echo "FAIL nobroker: accepted"; fail=1
@@ -171,12 +176,12 @@ expect plain 'hostname = "rusthinq.lan"'
 # A user-owned config.toml wins over the environment.
 mkdir -p "$TMP/own.data"
 printf 'hostname = "mine.local"\n' > "$TMP/own.data/config.toml"
-env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/own.data" RUSTHINQ_DRY_RUN=1 RUSTHINQ_HOSTNAME=env.local \
+env -i RUSTHINQ_RUNTIME_SERIES=0.1 RUSTHINQ_CONFIG_LIB="$ROOT/config" PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/own.data" RUSTHINQ_DRY_RUN=1 RUSTHINQ_HOSTNAME=env.local \
     "$ROOT/docker-entrypoint.sh" > "$TMP/own.out"
 grep -qF 'hostname = "mine.local"' "$TMP/own.out" || { echo "FAIL own: config.toml not used"; fail=1; }
 
 # A bad port is refused.
-if env -i PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/bad.data" RUSTHINQ_DRY_RUN=1 RUSTHINQ_GUI=1 \
+if env -i RUSTHINQ_RUNTIME_SERIES=0.1 RUSTHINQ_CONFIG_LIB="$ROOT/config" PATH="$PATH" RUSTHINQ_DATA_DIR="$TMP/bad.data" RUSTHINQ_DRY_RUN=1 RUSTHINQ_GUI=1 \
     RUSTHINQ_GUI_PORT=abc "$ROOT/docker-entrypoint.sh" >/dev/null 2>&1; then
     echo "FAIL badport: accepted"; fail=1
 fi

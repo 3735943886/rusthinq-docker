@@ -68,73 +68,16 @@ require_port() {
 
 # generate_config [path prefix] -- the prefix is put in front of every file path, so
 # a copy of the output kept elsewhere still points at the files in $DATA_DIR.
-generate_config() {
-    p="${1:-}"
-    printf 'hostname = %s\n' "$(toml_str "${RUSTHINQ_HOSTNAME:-rusthinq.lan}")"
-    if bool "${RUSTHINQ_ADVERTISE_REQUESTED_HOST:-true}"; then
-        echo 'advertise_requested_host = true'
-    fi
-    printf 'ca_key_file = %s\n' "$(toml_str "${p}ca.key")"
-    printf 'ca_cert_file = %s\n' "$(toml_str "${p}ca.cert")"
-    echo 'https_port = 443'
-    echo 'mqtts_port = 8883'
-    printf 'log = %s\n' "$(toml_list "${RUSTHINQ_LOG:-status,HTTPS,bridge}")"
-
-    echo
-    echo '[mqtt]'
-    printf 'mqtt_url = %s\n' "$(toml_str "${RUSTHINQ_MQTT_URL:-mqtt://localhost:1883}")"
-    printf 'mqtt_user = %s\n' "$(toml_str "${RUSTHINQ_MQTT_USER:-}")"
-    printf 'mqtt_pass = %s\n' "$(toml_str "${RUSTHINQ_MQTT_PASSWORD:-}")"
-    printf 'rusthinq_prefix = %s\n' "$(toml_str "${RUSTHINQ_PREFIX:-rusthinq}")"
-    # Unset -> default; set but empty -> the raw bus stays off.
-    raw_prefix="${RUSTHINQ_RAW_PREFIX-rusthinq-raw}"
-    if [ -n "$raw_prefix" ]; then
-        printf 'raw_prefix = %s\n' "$(toml_str "$raw_prefix")"
-        printf 'raw = %s\n' "$(toml_list "${RUSTHINQ_RAW:-rx,tx,clip_tx,inject,inject_clip,emit}")"
-    fi
-
-    if bool "${RUSTHINQ_BRIDGE:-true}"; then
-        echo
-        echo '[bridge]'
-        printf 'storage_path = %s\n' "$(toml_str "${p:-./}state")"
-        # The LG hostnames are redirected to rusthinq, so the bridge defaults to DoH by
-        # IP address to get past that; set it empty to use the host's resolver. (The
-        # add-on always passes its own bridge_dns option, cleared means empty.)
-        if [ "$HA_ADDON" = true ]; then
-            bridge_dns="${RUSTHINQ_BRIDGE_DNS:-}"
-        else
-            bridge_dns="${RUSTHINQ_BRIDGE_DNS-https://1.1.1.1/dns-query,https://8.8.8.8/dns-query}"
-        fi
-        if [ -n "$bridge_dns" ]; then
-            printf 'dns = %s\n' "$(toml_list "$bridge_dns")"
-        fi
-    fi
-
-    if bool "${RUSTHINQ_SCRIPTING:-true}"; then
-        echo
-        echo '[scripting]'
-        printf 'rhai_dir = %s\n' "$(toml_str "$SCRIPTS_DIR")"
-        echo 'watch = true'
-        if [ -n "${RUSTHINQ_IL_PREFIX:-}" ]; then
-            printf 'il_prefix = %s\n' "$(toml_str "$RUSTHINQ_IL_PREFIX")"
-        fi
-    fi
-
-    if bool "${RUSTHINQ_GUI:-true}"; then
-        gui_port="${RUSTHINQ_GUI_PORT:-44401}"
-        require_port RUSTHINQ_GUI_PORT "$gui_port"
-        echo
-        echo '[gui]'
-        printf 'gui_port = %s\n' "$gui_port"
-        if [ -n "${RUSTHINQ_GUI_USER:-}" ]; then
-            printf 'gui_user = %s\n' "$(toml_str "$RUSTHINQ_GUI_USER")"
-            printf 'gui_pass = %s\n' "$(toml_str "${RUSTHINQ_GUI_PASSWORD:-}")"
-        else
-            echo "rusthinq: warning: the dashboard is enabled without RUSTHINQ_GUI_USER;" \
-                "anyone who can reach port $gui_port can control the bridge" >&2
-        fi
-    fi
-}
+# The image fixes the runtime family at build time. Local tests may select it.
+RUNTIME_SERIES="${RUSTHINQ_RUNTIME_SERIES:-$(cat /etc/rusthinq-series 2>/dev/null || echo 0.2)}"
+CONFIG_LIB="${RUSTHINQ_CONFIG_LIB:-/usr/local/lib/rusthinq}"
+case "$RUNTIME_SERIES" in
+    0.1) DAEMON=rusthinq-cloud ;;
+    0.2) DAEMON=rusthinq ;;
+    *) die "unsupported runtime series: $RUNTIME_SERIES" ;;
+esac
+# shellcheck source=/dev/null
+. "$CONFIG_LIB/$RUNTIME_SERIES.sh"
 
 # Home Assistant add-on: the Supervisor writes the user's options to
 # /data/options.json (add-on `environment:` entries are static, so they can't carry
@@ -207,6 +150,14 @@ if [ -f "$USER_CONFIG" ]; then
     CONFIG="$USER_CONFIG"
     echo "rusthinq: using $CONFIG (RUSTHINQ_* settings are ignored)"
 else
+    if [ "$RUNTIME_SERIES" = 0.2 ]; then
+        for old_state in state known_devices.json; do
+            [ ! -e "$DATA_DIR/$old_state" ] || die "legacy data detected; run rusthinq-migrate against the 0.1 config and install the reviewed config.toml"
+        done
+        if [ -f "$DATA_DIR/config.generated.toml" ] && grep -Eq '^[[:space:]]*ca_key_file[[:space:]]*=' "$DATA_DIR/config.generated.toml"; then
+            die "legacy generated config detected; migrate it before starting 0.2"
+        fi
+    fi
     CONFIG="$DATA_DIR/config.generated.toml"
     # The generated file can hold the MQTT and dashboard passwords.
     (umask 077 && generate_config > "$CONFIG")
@@ -233,4 +184,14 @@ if bool "${RUSTHINQ_SCRIPTING:-true}" || [ -f "$USER_CONFIG" ]; then
     mkdir -p "$SCRIPTS_DIR" 2>/dev/null || true
 fi
 
-exec rusthinq-cloud "$CONFIG"
+if [ "$RUNTIME_SERIES" = 0.2 ]; then
+    if [ -f "$USER_CONFIG" ] && grep -Eq '^[[:space:]]*(ca_key_file|ca_cert_file|https_port|mqtts_port)[[:space:]]*=' "$USER_CONFIG"; then
+        die "0.1 config detected: run rusthinq-migrate OLD_CONFIG NEW_DIRECTORY and review its output before starting 0.2"
+    fi
+    # Only generated configurations get first-start initialization. Custom configs
+    # own their CA paths. Never replace existing or incomplete CA material.
+    if [ ! -f "$USER_CONFIG" ]; then
+        initialize_ca
+    fi
+fi
+exec "$DAEMON" "$CONFIG"

@@ -1,5 +1,5 @@
 name: "Rusthinq"
-version: "0.1.0"
+version: "0.2.0-dev"
 slug: rusthinq
 description: "LG ThinQ local cloud emulator: local MQTT control of LG appliances, optional bridge to the LG cloud"
 url: "https://github.com/3735943886/rusthinq-docker"
@@ -35,10 +35,12 @@ options:
   # to get past that. Clear it to use the host's resolver.
   bridge_dns: "https://1.1.1.1/dns-query,https://8.8.8.8/dns-query"
   scripting: true
+  legacy_tls: true
+  raw_inject_toggle: false
+  management: true
   gui: true
   gui_user: "admin"
   gui_password: "change-me"
-  log: "status,HTTPS,bridge"
 schema:
   hostname: "str"
   advertise_requested_host: "bool"
@@ -46,14 +48,13 @@ schema:
   mqtt_user: "str?"
   mqtt_password: "password?"
   prefix: "str"
-  raw_prefix: "str?"
-  raw: "str?"
   bridge: "bool"
   bridge_dns: "str?"
   scripting: "bool"
-  il_prefix: "str?"
+  legacy_tls: "bool"
+  raw_inject_toggle: "bool"
+  management: "bool"
   gui: "bool"
   gui_port: "port?"
   gui_user: "str?"
   gui_password: "password?"
-  log: "str"

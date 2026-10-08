@@ -2,22 +2,14 @@
 #
 # rusthinq -- LG ThinQ local cloud emulator.
 #
-# This image does not compile anything: it packages the prebuilt static musl
-# binaries from a rusthinq GitHub release. Put them in bin/<arch>/ first --
-#
-#   scripts/fetch-release.sh v0.1.0
-#
-# -- which fills bin/amd64, bin/arm64 and bin/armv7 (the names buildx gives
-# TARGETARCH+TARGETVARIANT). CI does the same before it builds.
-#
-# rusthinq-cloud shells out to the `openssl` CLI to sign device CSRs, so the
-# image needs it even though the binaries link OpenSSL statically. jq is for the
-# Home Assistant add-on, which passes its options as /data/options.json.
+# Packages prebuilt static musl binaries from a rusthinq release.
+# Fetch them with scripts/fetch-release.sh, then build with VERSION matching
+# that release. jq supports configuration generation and HA options.
 FROM alpine:3.21
 
 ARG TARGETARCH
 ARG TARGETVARIANT
-ARG VERSION=dev
+ARG VERSION=0.2.0-dev
 
 LABEL org.opencontainers.image.title="rusthinq" \
       org.opencontainers.image.description="LG ThinQ local cloud emulator" \
@@ -28,8 +20,13 @@ LABEL org.opencontainers.image.title="rusthinq" \
 RUN apk add --no-cache openssl ca-certificates tzdata jq \
  && mkdir -p /scripts
 
-COPY bin/${TARGETARCH}${TARGETVARIANT}/rusthinq-cloud /usr/local/bin/rusthinq-cloud
-COPY bin/${TARGETARCH}${TARGETVARIANT}/rusthinq-setup /usr/local/bin/rusthinq-setup
+COPY bin/${TARGETARCH}${TARGETVARIANT}/ /usr/local/bin/
+COPY config/ /usr/local/lib/rusthinq/
+RUN case "$VERSION" in \
+      0.1.*) series=0.1; test -x /usr/local/bin/rusthinq-cloud ;; \
+      0.2.*) series=0.2; test -x /usr/local/bin/rusthinq; test -x /usr/local/bin/rusthinq-migrate ;; \
+      *) echo "Unsupported VERSION: $VERSION" >&2; exit 1 ;; \
+    esac && printf '%s\n' "$series" > /etc/rusthinq-series
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # Everything that has to survive a restart lives here: the CA the appliances

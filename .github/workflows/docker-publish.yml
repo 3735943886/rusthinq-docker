@@ -44,8 +44,8 @@ jobs:
       - name: Validate tag
         run: |
           case "$TAG" in
-            v[0-9]*) ;;
-            *) echo "release tag must look like v0.1.0, got '$TAG'" >&2; exit 1 ;;
+            v0.1.* | v0.2.*) ;;
+            *) echo "release tag must be v0.1.* or v0.2.*, got '$TAG'" >&2; exit 1 ;;
           esac
           echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
 
@@ -63,7 +63,8 @@ jobs:
           stable=false
           if printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             stable=true
-            tags="$tags,$IMAGE:${VERSION%.*},$IMAGE:latest"
+            tags="$tags,$IMAGE:${VERSION%.*}"
+            case "$VERSION" in 0.2.*) tags="$tags,$IMAGE:latest" ;; esac
           fi
           echo "Will push: $tags"
           echo "tags=$tags" >> "$GITHUB_OUTPUT"
@@ -92,9 +93,14 @@ jobs:
       - name: Point the add-on at this version
         if: steps.tags.outputs.stable == 'true'
         run: |
-          sed -i "s/^version: .*/version: \"$VERSION\"/" rusthinq/config.yaml
-          if ! grep -q "^## $VERSION\$" rusthinq/CHANGELOG.md; then
-            printf '\n## %s\n\n- Packages rusthinq %s.\n' "$VERSION" "$TAG" >> rusthinq/CHANGELOG.md
+          case "$VERSION" in
+            0.1.*) addon=rusthinq-legacy ;;
+            0.2.*) addon=rusthinq ;;
+            *) echo "Unsupported release family" >&2; exit 1 ;;
+          esac
+          sed -i "s/^version: .*/version: \"$VERSION\"/" "$addon/config.yaml"
+          if ! grep -q "^## $VERSION\$" "$addon/CHANGELOG.md"; then
+            printf '\n## %s\n\n- Packages rusthinq %s.\n' "$VERSION" "$TAG" >> "$addon/CHANGELOG.md"
           fi
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"

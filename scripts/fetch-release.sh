@@ -24,7 +24,15 @@ for pair in amd64:amd64 aarch64:arm64 armv7:armv7; do
     rm -rf "${ROOT:?}/bin/$dest"
     mkdir -p "$ROOT/bin/$dest"
     tar -xzf "$archive" -C "$ROOT/bin/$dest" --strip-components=1
-    chmod +x "$ROOT/bin/$dest"/rusthinq-*
+    case "$TAG" in
+        v0.1.*) required="rusthinq-cloud rusthinq-setup" ;;
+        v0.2.*) required="rusthinq rusthinq-setup rusthinq-migrate" ;;
+        *) echo "unsupported release: $TAG" >&2; exit 1 ;;
+    esac
+    for executable in $required; do
+        [ -f "$ROOT/bin/$dest/$executable" ] || { echo "missing $executable in $archive" >&2; exit 1; }
+    done
+    chmod +x "$ROOT/bin/$dest"/rusthinq*
 done
 
 echo "unpacked $TAG into $ROOT/bin/"
