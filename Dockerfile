@@ -9,7 +9,7 @@ FROM alpine:3.21
 
 ARG TARGETARCH
 ARG TARGETVARIANT
-ARG VERSION=0.2.0-dev
+ARG VERSION=0.2.0-rc1
 
 LABEL org.opencontainers.image.title="rusthinq" \
       org.opencontainers.image.description="LG ThinQ local cloud emulator" \
