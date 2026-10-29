@@ -152,7 +152,7 @@ if [ -f "$USER_CONFIG" ]; then
 else
     if [ "$RUNTIME_SERIES" = 0.2 ]; then
         for old_state in state known_devices.json; do
-            [ ! -e "$DATA_DIR/$old_state" ] || die "legacy data detected; run rusthinq-migrate against the 0.1 config and install the reviewed config.toml"
+            [ ! -e "$DATA_DIR/$old_state" ] || die "legacy data detected; run rusthinqctl migrate against the 0.1 config and install the reviewed config.toml"
         done
         if [ -f "$DATA_DIR/config.generated.toml" ] && grep -Eq '^[[:space:]]*ca_key_file[[:space:]]*=' "$DATA_DIR/config.generated.toml"; then
             die "legacy generated config detected; migrate it before starting 0.2"
@@ -186,7 +186,7 @@ fi
 
 if [ "$RUNTIME_SERIES" = 0.2 ]; then
     if [ -f "$USER_CONFIG" ] && grep -Eq '^[[:space:]]*(ca_key_file|ca_cert_file|https_port|mqtts_port)[[:space:]]*=' "$USER_CONFIG"; then
-        die "0.1 config detected: run rusthinq-migrate OLD_CONFIG NEW_DIRECTORY and review its output before starting 0.2"
+        die "0.1 config detected: run rusthinqctl migrate OLD_CONFIG NEW_DIRECTORY and review its output before starting 0.2"
     fi
     # Only generated configurations get first-start initialization. Custom configs
     # own their CA paths. Never replace existing or incomplete CA material.

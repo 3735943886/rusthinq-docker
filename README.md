@@ -110,8 +110,9 @@ docker run --rm --network host 3735943886/rusthinq:0.2 \
 Run the Docker workflow with an upstream release tag or dispatch `rusthinq-release`
 with `client_payload.tag`. Release archives retain the naming convention
 `rusthinq-vX.Y.Z-linux-{amd64,aarch64,armv7}.tar.gz`, with executables in one top-level
-directory. 0.2 archives must include `rusthinq`, `rusthinq-setup`, and
-`rusthinq-migrate`; all packaged tools are copied into the image.
+directory. 0.2 archives must include `rusthinq`, `rusthinqctl` (every tool, including
+`rusthinqctl migrate`, is a subcommand) and `rusthinq-setup`; all packaged binaries are
+copied into the image.
 
 Stable 0.1 releases update `:0.1` and the legacy add-on only. Stable 0.2 releases
 update `:0.2`, `:latest`, and the default add-on. Prereleases publish their exact tag

@@ -26,7 +26,7 @@ for pair in amd64:amd64 aarch64:arm64 armv7:armv7; do
     tar -xzf "$archive" -C "$ROOT/bin/$dest" --strip-components=1
     case "$TAG" in
         v0.1.*) required="rusthinq-cloud rusthinq-setup" ;;
-        v0.2.*) required="rusthinq rusthinq-setup rusthinq-migrate" ;;
+        v0.2.*) required="rusthinq rusthinqctl rusthinq-setup" ;;
         *) echo "unsupported release: $TAG" >&2; exit 1 ;;
     esac
     for executable in $required; do

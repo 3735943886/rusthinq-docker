@@ -24,7 +24,7 @@ COPY bin/${TARGETARCH}${TARGETVARIANT}/ /usr/local/bin/
 COPY config/ /usr/local/lib/rusthinq/
 RUN case "$VERSION" in \
       0.1.*) series=0.1; test -x /usr/local/bin/rusthinq-cloud ;; \
-      0.2.*) series=0.2; test -x /usr/local/bin/rusthinq; test -x /usr/local/bin/rusthinq-migrate ;; \
+      0.2.*) series=0.2; test -x /usr/local/bin/rusthinq; test -x /usr/local/bin/rusthinqctl ;; \
       *) echo "Unsupported VERSION: $VERSION" >&2; exit 1 ;; \
     esac && printf '%s\n' "$series" > /etc/rusthinq-series
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
